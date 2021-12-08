@@ -14,20 +14,44 @@ s_thr = 0.5
 # new file name for saving image
 
 
-def getNewFileNameForEnhancedImage(file_name, prefix):
+def getNewFileName(file_name, prefix):
     split_file_name = file_name.split('/')
-    print(split_file_name)
+    # print(split_file_name)
 
     split_file_name[-1] = prefix + split_file_name[-1]
-    new_file_name = "/".join(split_file_name) 
+    new_file_name = "/".join(split_file_name)
 
     # print("new_file_name ", new_file_name)
 
     return new_file_name
 
-# testing getNewFileNameForEnhancedImage()
-# a = getNewFileNameForEnhancedImage("E:/MLCollegeProject/Anup/taj.jpeg", "asdfs_")
+
+def getNewFileNameWithExtension(file_name, prefix, file_extension):
+    split_file_name = file_name.split('/')
+
+    # print(split_file_name, file_extension)
+
+    # print(split_file_name[-1].split('.'))
+
+    file_name_with_old_extension = split_file_name[-1].split('.')
+
+    file_name_with_old_extension[-1] = file_extension
+
+    file_name_with_new_extension = ".".join(file_name_with_old_extension)
+
+    split_file_name[-1] = file_name_with_new_extension
+
+    split_file_name[-1] = prefix + split_file_name[-1]
+
+    new_file_name = "/".join(split_file_name)
+
+    return new_file_name
+
+
+# testing getNewFileName()
+# a = getNewFileName("E:/MLCollegeProject/Anup/taj.jpeg", "asdfs_")
 # print(a)
+
 
 def isGreyScale(file_name):
     image = cv2.imread(file_name)
@@ -37,8 +61,23 @@ def isGreyScale(file_name):
     elif len(image.shape) == 3:
         return False
 
+# get histogram for file_name
 
-def isNoisy(image):
+
+def getHistogram(file_name):
+    print(file_name)
+    img = cv2.imread(file_name)
+    hist = cv2.calcHist([img], [0], None, [256], [0, 256])
+    plt.plot(hist)
+
+    new_file_name = getNewFileNameWithExtension(file_name, "hist_", "png")
+
+    plt.savefig(new_file_name)
+
+    return new_file_name
+
+
+def getNoise(image):
 
     # Convert image to HSV color space
     image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
@@ -70,7 +109,7 @@ def variance_of_laplacian(image):
     return cv2.Laplacian(image, cv2.CV_64F).var()
 
 
-def isBlurry(image):
+def getBlurryness(image):
     # ap = argparse.ArgumentParser()
     # ap.add_argument("-i", "--images", required=True,
     # help="path to input directory of images")
@@ -84,8 +123,8 @@ def isBlurry(image):
     return fm
 
 
-def enhanceColorImage(file_name):
-    print("started enhanceColorImage() ")
+def CLAHE(file_name):
+    print("started CLAHE() ")
 
     image = cv2.imread(file_name, cv2.IMREAD_UNCHANGED)
 
@@ -93,11 +132,11 @@ def enhanceColorImage(file_name):
 
     print("Color Image")
 
-    if isNoisy(image) > s_thr:
-        image = cv2.fastNlMeansDenoisingColored(image, None, 10, 10, 7, 21)
-    if isBlurry(image) < 100:
-        sharpen_kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
-        image = cv2.filter2D(image, -1, sharpen_kernel)
+    # if isNoisy(image) > s_thr:
+    #     image = cv2.fastNlMeansDenoisingColored(image, None, 10, 10, 7, 21)
+    # if isBlurry(image) < 100:
+    #     sharpen_kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
+    #     image = cv2.filter2D(image, -1, sharpen_kernel)
 
     lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
 
@@ -112,11 +151,11 @@ def enhanceColorImage(file_name):
 
     bgr = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
 
-    new_file_name = getNewFileNameForEnhancedImage(file_name, "enhanced_")
+    new_file_name = getNewFileName(file_name, "enhanced_")
 
     cv2.imwrite(new_file_name, image)
 
-    print("stopped enhanceColorImage()\n")
+    print("stopped CLAHE()\n")
 
     return new_file_name
 
@@ -133,7 +172,7 @@ def enhanceGreyscaleImage(file_name):
     ret, thresh = cv2.threshold(
         cl_img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-    new_file_name = getNewFileNameForEnhancedImage(file_name, "greyscale_")
+    new_file_name = getNewFileName(file_name, "greyscale_")
 
     cv2.imwrite(new_file_name, cl_img)
 
@@ -151,12 +190,12 @@ def traditionalMethod(file_name):
     # convert the YUV image back to RGB format
     img_output = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2BGR)
 
-    new_file_name = getNewFileNameForEnhancedImage(file_name, "traditional_")
+    new_file_name = getNewFileName(file_name, "traditional_")
 
     cv2.imwrite(new_file_name, img_output)
 
     print("stopped traditionalMethod()")
-    
+
     return new_file_name
 
 
@@ -175,3 +214,7 @@ def traditionalMethod(file_name):
 
 
 # enhanceColorImage("g.jpg")
+# NOISE
+# BLURRYNESS
+# LUMINOSITY
+# INTENSITY
