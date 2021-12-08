@@ -9,7 +9,8 @@ from imutils import paths
 import argparse
 from scipy import ndimage
 
-s_thr = 0.5
+threshold_for_noise = 0.5
+limit_for_blurryness = 100
 
 # new file name for saving image
 
@@ -48,13 +49,8 @@ def getNewFileNameWithExtension(file_name, prefix, file_extension):
     return new_file_name
 
 
-# testing getNewFileName()
-# a = getNewFileName("E:/MLCollegeProject/Anup/taj.jpeg", "asdfs_")
-# print(a)
-
-
 def isGreyScale(file_name):
-    image = cv2.imread(file_name)
+    image = cv2.imread(file_name, cv2.IMREAD_UNCHANGED)
     print("len(image.shape)", len(image.shape), "\n")
     if(len(image.shape) < 3):
         return True
@@ -123,6 +119,24 @@ def getBlurryness(image):
     return fm
 
 
+# function for clahe greyscale
+
+def claheGreyscaleMethod(file_name):
+    image = cv2.imread(file_name, cv2.IMREAD_UNCHANGED)
+
+    clahe = cv2.createCLAHE(clipLimit=1.0, tileGridSize=(8, 8))
+    cl_img = clahe.apply(image)
+    # plt.hist(cl_img.flat, bins=100, range=(100, 255))
+    ret, thresh = cv2.threshold(
+        cl_img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    new_file_name = getNewFileName(file_name, "clahe_greyscale_")
+
+    cv2.imwrite(new_file_name, thresh)
+
+    return new_file_name
+
+
 def CLAHE(file_name):
     print("started CLAHE() ")
 
@@ -132,17 +146,48 @@ def CLAHE(file_name):
 
     print("Color Image")
 
-    # if isNoisy(image) > s_thr:
-    #     image = cv2.fastNlMeansDenoisingColored(image, None, 10, 10, 7, 21)
-    # if isBlurry(image) < 100:
-    #     sharpen_kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
-    #     image = cv2.filter2D(image, -1, sharpen_kernel)
+    lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+
+    lab_planes = cv2.split(lab)
+
+    clahe = cv2.createCLAHE(clipLimit=1.0, tileGridSize=(8, 8))
+    lab_planes = list(lab_planes)
+
+    lab_planes[0] = clahe.apply(lab_planes[0])
+    img = image
+    lab = cv2.merge(lab_planes)
+
+    bgr = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+
+    new_file_name = getNewFileName(file_name, "clahe_")
+
+    cv2.imwrite(new_file_name, image)
+
+    print("stopped CLAHE()\n")
+
+    return new_file_name
+
+
+def ourMethod(file_name):
+    print("started ourMethod() ")
+
+    image = cv2.imread(file_name, cv2.IMREAD_UNCHANGED)
+
+    print(len(image.shape))
+
+    print("Color Image")
+
+    if getNoise(image) > threshold_for_noise:
+        image = cv2.fastNlMeansDenoisingColored(image, None, 10, 10, 7, 21)
+    if getBlurryness(image) < limit_for_blurryness:
+        sharpen_kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
+        image = cv2.filter2D(image, -1, sharpen_kernel)
 
     lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
 
     lab_planes = cv2.split(lab)
 
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    clahe = cv2.createCLAHE(clipLimit=1.0, tileGridSize=(8, 8))
     lab_planes = list(lab_planes)
 
     lab_planes[0] = clahe.apply(lab_planes[0])
@@ -155,16 +200,22 @@ def CLAHE(file_name):
 
     cv2.imwrite(new_file_name, image)
 
-    print("stopped CLAHE()\n")
+    print("stopped ourMethod()\n")
 
     return new_file_name
 
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
 
+# for ours
 
-def enhanceGreyscaleImage(file_name):
-    image = cv2.imread(file_name)
+def enhanceGreyscaleMethod(file_name):
+    image = cv2.imread(file_name, cv2.IMREAD_UNCHANGED)
+
+    # denoising
+    image = cv2.fastNlMeansDenoising(image, None, 10, 7, 21)
+
+    # se = cv2.getStructuringElement(cv2.MORPH_RECT, (8, 8))
+    # bg = cv2.morphologyEx(image, cv2.MORPH_DILATE, se)
+    # image = cv2.divide(image, bg, scale=255)
 
     clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
     cl_img = clahe.apply(image)
@@ -172,15 +223,25 @@ def enhanceGreyscaleImage(file_name):
     ret, thresh = cv2.threshold(
         cl_img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-    new_file_name = getNewFileName(file_name, "greyscale_")
+    new_file_name = getNewFileName(file_name, "our_greyscale_")
 
-    cv2.imwrite(new_file_name, cl_img)
+    cv2.imwrite(new_file_name, thresh)
+
+    return new_file_name
+
+
+def traditionalMethodForGreyScale(file_name):
+    image = cv2.imread(file_name, cv2.IMREAD_UNCHANGED)
+    equalized_image = cv2.equalizeHist(image)
+    new_file_name = getNewFileName(file_name, "traditional_greyscale_")
+    cv2.imwrite(new_file_name, equalized_image)
+    return new_file_name
 
 
 def traditionalMethod(file_name):
     print("started traditionalMethod()")
 
-    img = cv2.imread(file_name)
+    img = cv2.imread(file_name, cv2.IMREAD_UNCHANGED)
 
     img_yuv = cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
 
@@ -197,20 +258,6 @@ def traditionalMethod(file_name):
     print("stopped traditionalMethod()")
 
     return new_file_name
-
-
-# if isGreyScale(image) == True:
-#     print("greyscale")
-#     image = cv2.fastNlMeansDenoising(image, None, 10, 7, 21)
-#     enhanceGreyscaleImage(image)
-# else:
-#     print("Color Image")
-#     if isNoisy(image) == True:
-#         image = cv2.fastNlMeansDenoisingColored(image, None, 10, 10, 7, 21)
-#     if isBlurry(image) == True:
-#         sharpen_kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
-#         image = cv2.filter2D(image, -1, sharpen_kernel)
-#     enhanceColorImage(image)
 
 
 # enhanceColorImage("g.jpg")

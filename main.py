@@ -51,19 +51,19 @@ def show(file_name, title="Input Image"):
 
     window.photo = photo
 
-    canvas.create_image(10, 10, image=photo, anchor=tk.NW)
-
-    # window.mainloop()
-
+    canvas.create_image(0, 0, image=photo, anchor=tk.NW)
 
 # function to show the text in a canvas
 
+
 def showText(canvas, text):
+    canvas.delete('all')
     canvas.create_text(
         200, 100,
         fill="darkblue",
         font="Times 20 italic bold",
         text=text)
+    canvas.pack()
 
 
 # function to get parameters of an image such as noise and blurryness
@@ -100,21 +100,20 @@ def enhanceImage(canvas_input, canvas_output):
     print("started enhanceImage() \n")
     print(option, "\n")
 
-    if(Code.isGreyScale(file_name)):
-        new_file_name = Code.enhanceGreyscaleImage(file_name)
-
-        show(new_file_name)
-
-        return
-
     if(option == "null"):
         print("Please select one option\n")
+        showText(canvas_input, "Please select one option")
         return
 
     elif(option == "traditional"):
+
         print("if option == traditional\n")
 
-        new_file_name = Code.traditionalMethod(file_name)
+        if(Code.isGreyScale(file_name)):
+            new_file_name = Code.traditionalMethodForGreyScale(file_name)
+
+        else:
+            new_file_name = Code.traditionalMethod(file_name)
 
         # get histogram of old image
         histogram_of_old_image = Code.getHistogram(file_name)
@@ -123,8 +122,9 @@ def enhanceImage(canvas_input, canvas_output):
         histogram_of_new_image = Code.getHistogram(new_file_name)
 
         show(new_file_name, "Traditional")
-        show(histogram_of_old_image, "Histogram " + histogram_of_old_image)
-        show(histogram_of_new_image, "Histogram " + histogram_of_new_image)
+
+        show(histogram_of_old_image, "Histogram " + file_name)
+        show(histogram_of_new_image, "Histogram " + new_file_name)
 
         noise_input_image, blurryness_input_image = getParametersOfAnImage(
             file_name)
@@ -137,8 +137,15 @@ def enhanceImage(canvas_input, canvas_output):
                  "\n" + "Blurryness " + str(blurryness_output_image))
 
     elif(option == "clahe"):
-        # apply CLAHE algorithm
-        new_file_name = Code.CLAHE(file_name)
+
+        if(Code.isGreyScale(file_name)):
+            print("Image is grey scale\n")
+            # apply CLAHE for grey scale
+            new_file_name = Code.claheGreyscaleMethod(file_name)
+
+        else:
+            # apply CLAHE algorithm
+            new_file_name = Code.CLAHE(file_name)
 
         # get histogram of old image
         histogram_of_old_image = Code.getHistogram(file_name)
@@ -146,11 +153,51 @@ def enhanceImage(canvas_input, canvas_output):
         # get histogram of new processed image
         histogram_of_new_image = Code.getHistogram(new_file_name)
 
-        show(new_file_name, "CLAHE")
+        show(new_file_name, "Adaptive Method")
 
-        show(new_file_name, "CLAHE")
-        show(histogram_of_old_image, "Histogram " + histogram_of_old_image)
-        show(histogram_of_new_image, "Histogram " + histogram_of_new_image)
+        show(histogram_of_old_image, "Histogram " + file_name)
+        show(histogram_of_new_image, "Histogram " + new_file_name)
+
+        noise_input_image, blurryness_input_image = getParametersOfAnImage(
+            file_name)
+        noise_output_image, blurryness_output_image = getParametersOfAnImage(
+            new_file_name)
+
+        showText(canvas_input, "Noise : " + str(noise_input_image) +
+                 "\n" + "Blurryness " + str(blurryness_input_image))
+        showText(canvas_output, "Noise : " + str(noise_output_image) +
+                 "\n" + "Blurryness " + str(blurryness_output_image))
+
+    elif(option == "ourmethod"):
+
+        if(Code.isGreyScale(file_name)):
+            # apply our method for grey scale
+            new_file_name = Code.enhanceGreyscaleMethod(file_name)
+
+        else:
+            # apply our method algorithm
+            new_file_name = Code.ourMethod(file_name)
+
+        # get histogram of old image
+        histogram_of_old_image = Code.getHistogram(file_name)
+
+        # get histogram of new processed image
+        histogram_of_new_image = Code.getHistogram(new_file_name)
+
+        show(new_file_name, "Our Method")
+
+        show(histogram_of_old_image, "Histogram " + file_name)
+        show(histogram_of_new_image, "Histogram " + new_file_name)
+
+        noise_input_image, blurryness_input_image = getParametersOfAnImage(
+            file_name)
+        noise_output_image, blurryness_output_image = getParametersOfAnImage(
+            new_file_name)
+
+        showText(canvas_input, "Noise : " + str(noise_input_image) +
+                 "\n" + "Blurryness " + str(blurryness_input_image))
+        showText(canvas_output, "Noise : " + str(noise_output_image) +
+                 "\n" + "Blurryness " + str(blurryness_output_image))
 
     print("stopped enhanceImage() \n")
 
@@ -175,6 +222,13 @@ def selectCLAHE():
 
     global option
     option = "clahe"
+
+
+def selectOurs():
+    print("ours selected")
+
+    global option
+    option = "ourmethod"
 
 
 def main():
@@ -211,11 +265,11 @@ def main():
                                    bg="white", font=('calibri', 20, 'bold'))
     button_traditional.place(relx=0.3, rely=0, relheight=0.7, relwidth=0.2)
 
-    button_adaptive = tk.Button(frame1, text='Adaptive', command=selectAdaptive,
+    button_adaptive = tk.Button(frame1, text='Adaptive', command=selectCLAHE,
                                 bg="white", font=('calibri', 20, 'bold'))
     button_adaptive.place(relx=0.5, rely=0, relheight=0.7, relwidth=0.2)
 
-    button_clahe = tk.Button(frame1, text='OURS', command=selectCLAHE,
+    button_clahe = tk.Button(frame1, text='OURS', command=selectOurs,
                              bg="white", font=('calibri', 20, 'bold'))
     button_clahe.place(relx=0.7, rely=0, relheight=0.7, relwidth=0.2)
 
@@ -279,4 +333,5 @@ main()
 
 # CHANGE NAMING OF FRAMES
 # HISTOGRAM
-#
+# histogram overlay
+# change saved images name prefix for every method
