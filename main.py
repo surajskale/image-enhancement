@@ -2,6 +2,7 @@
 import tkinter as tk
 from tkinter import filedialog
 from tkinter.filedialog import askopenfile
+from matplotlib import pyplot as plt
 from PIL import Image, ImageTk, ImageFilter
 import cv2
 import numpy as np
@@ -40,9 +41,6 @@ def show(file_name, title="Input Image"):
                      width=width*2, height=height*2)
     frame.pack()
 
-    # frame.place(relx=0, rely=0, relwidth=1,
-    #               relheight=1, anchor='n')
-
     # Create a canvas that can fit the above image
     canvas = tk.Canvas(frame, width=width, height=height)
     canvas.pack()
@@ -59,7 +57,7 @@ def show(file_name, title="Input Image"):
 def showText(canvas, text):
     canvas.delete('all')
     canvas.create_text(
-        200, 100,
+        200, 200,
         fill="darkblue",
         font="Times 20 italic bold",
         text=text)
@@ -94,6 +92,18 @@ def open_file():
     show(file_name)
 
 
+def histogram(file_name, new_file_name):
+    # get histogram of old image
+    histogram_of_old_image = Code.getHistogram(file_name)
+
+    # get histogram of new processed image
+    histogram_of_new_image = Code.getHistogram(new_file_name)
+
+    plt.clf()
+
+    return histogram_of_old_image, histogram_of_new_image
+
+
 def enhanceImage(canvas_input, canvas_output):
     global file_name, option
 
@@ -115,13 +125,10 @@ def enhanceImage(canvas_input, canvas_output):
         else:
             new_file_name = Code.traditionalMethod(file_name)
 
-        # get histogram of old image
-        histogram_of_old_image = Code.getHistogram(file_name)
-
-        # get histogram of new processed image
-        histogram_of_new_image = Code.getHistogram(new_file_name)
-
         show(new_file_name, "Traditional")
+
+        histogram_of_old_image, histogram_of_new_image = histogram(
+            file_name, new_file_name)
 
         show(histogram_of_old_image, "Histogram " + file_name)
         show(histogram_of_new_image, "Histogram " + new_file_name)
@@ -147,11 +154,8 @@ def enhanceImage(canvas_input, canvas_output):
             # apply CLAHE algorithm
             new_file_name = Code.CLAHE(file_name)
 
-        # get histogram of old image
-        histogram_of_old_image = Code.getHistogram(file_name)
-
-        # get histogram of new processed image
-        histogram_of_new_image = Code.getHistogram(new_file_name)
+        histogram_of_old_image, histogram_of_new_image = histogram(
+            file_name, new_file_name)
 
         show(new_file_name, "Adaptive Method")
 
@@ -178,16 +182,13 @@ def enhanceImage(canvas_input, canvas_output):
             # apply our method algorithm
             new_file_name = Code.ourMethod(file_name)
 
-        # get histogram of old image
-        histogram_of_old_image = Code.getHistogram(file_name)
-
-        # get histogram of new processed image
-        histogram_of_new_image = Code.getHistogram(new_file_name)
+        histogram_of_old_image, histogram_of_new_image = histogram(
+            file_name, new_file_name)
 
         show(new_file_name, "Our Method")
 
-        show(histogram_of_old_image, "Histogram " + file_name)
-        show(histogram_of_new_image, "Histogram " + new_file_name)
+        show(histogram_of_old_image, "Histogram for Input Image " + file_name)
+        show(histogram_of_new_image, "Histogram for Output Image " + new_file_name)
 
         noise_input_image, blurryness_input_image = getParametersOfAnImage(
             file_name)

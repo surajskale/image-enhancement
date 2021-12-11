@@ -213,9 +213,9 @@ def enhanceGreyscaleMethod(file_name):
     # denoising
     image = cv2.fastNlMeansDenoising(image, None, 10, 7, 21)
 
-    # se = cv2.getStructuringElement(cv2.MORPH_RECT, (8, 8))
-    # bg = cv2.morphologyEx(image, cv2.MORPH_DILATE, se)
-    # image = cv2.divide(image, bg, scale=255)
+    se = cv2.getStructuringElement(cv2.MORPH_RECT, (8, 8))
+    bg = cv2.morphologyEx(image, cv2.MORPH_DILATE, se)
+    image = cv2.divide(image, bg, scale=255)
 
     clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
     cl_img = clahe.apply(image)
